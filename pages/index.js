@@ -118,73 +118,75 @@
 //   );
 // }
 
-import { useState } from 'react'
-import { parse, format } from 'date-fns'
+import { useState } from 'react';
+import { parse, format } from 'date-fns';
 
 export default function Home() {
-  const [ref, setRef] = useState('')
-  const [result, setResult] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false) // NEW
+  const [ref, setRef] = useState('');
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function handleTrack() {
-    setResult(null)
-    setError('')
-    setLoading(true) // START LOADING
+    setResult(null);
+    setError('');
+    setLoading(true);
 
     const trackingNumbers = ref
       .split('\n')
       .map((t) => t.trim())
-      .filter(Boolean)
+      .filter(Boolean);
 
-    const results = []
+    const results = [];
 
     for (const tn of trackingNumbers) {
       try {
         const res = await fetch(
-          `/api/track?referenceNumber=${encodeURIComponent(tn)}`,
-        )
-        const data = await res.json()
+          `/api/track?referenceNumber=${encodeURIComponent(tn)}`
+        );
+        const data = await res.json();
 
         if (!res.ok || !data?.trackResponse) {
           results.push({
             trackingNumber: tn,
             error: data.error || 'Tracking failed',
-          })
-          continue
+          });
+          continue;
         }
 
-        const activity =
-          data.trackResponse.shipment?.[0].package?.[0].activity?.[0]
+        const shipment = data.trackResponse.shipment?.[0];
+        const pkg = shipment?.package?.[0];
+        const activity = pkg?.activity?.[0];
 
         if (!activity) {
-          results.push({ trackingNumber: tn, error: 'No activity found' })
-          continue
+          results.push({ trackingNumber: tn, error: 'No activity found' });
+          continue;
         }
 
         const dt = parse(
           `${activity.date}${activity.time}`,
           'yyyyMMddHHmmss',
-          new Date(),
-        )
-        const nice = format(dt, 'Pp')
+          new Date()
+        );
+        const nice = format(dt, 'Pp');
 
         results.push({
           trackingNumber: tn,
           city: activity.location.address.city,
-          state: activity.location.address.stateProvince,
-          country: activity.location.address.country,
+          state: activity.location.address.stateProvince || '',
+          country: activity.location.address.country || '',
           statusDescription: activity.status.description.trim(),
           statusCode: activity.status.statusCode,
           datetime: nice,
-        })
+          service: pkg?.service?.description || 'N/A',
+        });
       } catch (e) {
-        results.push({ trackingNumber: tn, error: e.message })
+        results.push({ trackingNumber: tn, error: e.message });
       }
     }
 
-    setResult(results)
-    setLoading(false) // STOP LOADING
+    setResult(results);
+    setLoading(false);
   }
 
   return (
@@ -251,19 +253,28 @@ export default function Home() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {result &&
+      {Array.isArray(result) &&
         result.map((item, index) => (
           <div
             key={index}
             style={{
               marginTop: '1rem',
-              background: '#f0f0f0',
+              background: item.statusCode === '011' ? '#d0f0d0' : '#f0f0f0',
               padding: '1rem',
             }}
           >
             <p>
-              <strong>Tracking #:</strong> {item.trackingNumber}
+              <strong>Tracking #:</strong>{' '}
+              <a
+                href={`https://www.ups.com/track?tracknum=${item.trackingNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#0070f3', textDecoration: 'underline' }}
+              >
+                {item.trackingNumber}
+              </a>
             </p>
+
             {item.error ? (
               <p style={{ color: 'red' }}>
                 <strong>Error:</strong> {item.error}
@@ -275,16 +286,26 @@ export default function Home() {
                   {item.country})
                 </p>
                 <p>
-                  <strong>Status:</strong> {item.statusDescription} (Code:{' '}
-                  {item.statusCode})
+                  <strong>Status:</strong>{' '}
+                  <span
+                    style={{
+                      color: item.statusCode !== '011' ? 'red' : 'inherit',
+                    }}
+                  >
+                    {item.statusDescription}
+                  </span>
                 </p>
                 <p>
                   <strong>Timestamp:</strong> {item.datetime}
+                </p>
+                <p>
+                  <strong>Service:</strong> {item.service}
                 </p>
               </>
             )}
           </div>
         ))}
     </div>
-  )
+  );
 }
+
