@@ -1,123 +1,3 @@
-// JSON
-// import { useState } from 'react';
-
-// export default function Home() {
-//   const [ref, setRef] = useState('');
-//   const [result, setResult] = useState(null);
-//   const [error, setError] = useState('');
-
-//   async function handleTrack() {
-//     setResult(null);
-//     setError('');
-
-//     try {
-//       const res = await fetch(`/api/track?referenceNumber=${encodeURIComponent(ref)}`);
-//       const data = await res.json();
-//       if (!res.ok) setError(data.error || 'Server error');
-//       else setResult(data);
-//     } catch (e) {
-//       setError(e.message);
-//     }
-//   }
-
-//   return (
-//     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-//       <h1>UPS Reference Tracking</h1>
-//       <input
-//         type="text"
-//         value={ref}
-//         onChange={e => setRef(e.target.value)}
-//         placeholder="Enter Reference Number"
-//         style={{ padding: '.5rem', width: '300px' }}
-//       />
-//       <button onClick={handleTrack} style={{ marginLeft: '1rem', padding: '.5rem 1rem' }}>
-//         Track
-//       </button>
-//       {error && <p style={{ color: 'red' }}>{error}</p>}
-
-//       {result && <pre style={{ background: '#f0f0f0', padding: '1rem', marginTop: '1rem' }}>{JSON.stringify(result, null, 2)}</pre>}
-//     </div>
-//   );
-// }
-
-// PARSED JSON
-// import { useState } from 'react';
-// import { parse, format } from 'date-fns';
-
-// export default function Home() {
-//   const [ref, setRef] = useState('');
-//   const [result, setResult] = useState(null);
-//   const [error, setError] = useState('');
-
-//   async function handleTrack() {
-//     setResult(null);
-//     setError('');
-
-//     try {
-//       const res = await fetch(`/api/track?referenceNumber=${encodeURIComponent(ref)}`);
-//       const data = await res.json();
-//       if (!res.ok) {
-//         setError(data.error || 'Server error');
-//       } else {
-//         // ← extract only what we need
-//         const activity = data
-//           .trackResponse
-//           .shipment?.[0]
-//           .package?.[0]
-//           .activity?.[0];
-
-//         if (!activity) {
-//           setError('No activity found');
-//           return;
-//         }
-
-//         const dt = parse(
-//             `${activity.date}${activity.time}`,   // e.g. "20250425100510"
-//             'yyyyMMddHHmmss',
-//             new Date()
-//           );
-//           const nice = format(dt, 'Pp');
-
-//         setResult({
-//           city: activity.location.address.city,
-//           state: activity.location.address.stateProvince,
-//           country: activity.location.address.country,
-//           statusDescription: activity.status.description.trim(),
-//           statusCode: activity.status.statusCode,
-//           datetime: nice,
-//         });
-//       }
-//     } catch (e) {
-//       setError(e.message);
-//     }
-//   }
-
-//   return (
-//     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-//       <h1>UPS Reference Tracking</h1>
-//       <input
-//         type="text"
-//         value={ref}
-//         onChange={e => setRef(e.target.value)}
-//         placeholder="Enter Reference Number"
-//         style={{ padding: '.5rem', width: '300px' }}
-//       />
-//       <button onClick={handleTrack} style={{ marginLeft: '1rem', padding: '.5rem 1rem' }}>
-//         Track
-//       </button>
-//       {error && <p style={{ color: 'red' }}>{error}</p>}
-
-//       {result && (
-//         <div style={{ marginTop: '1rem', background: '#f0f0f0', padding: '1rem' }}>
-//           <p><strong>City:</strong> {result.city}, {result.state} ({result.country})</p>
-//           <p><strong>Status:</strong> {result.statusDescription}</p>
-//           <p><strong>Timestamp:</strong> {result.datetime}</p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
 import { useState } from 'react';
 import { parse, format } from 'date-fns';
 
@@ -127,67 +7,159 @@ export default function Home() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // async function handleTrack() {
+  //   setResult(null);
+  //   setError('');
+  //   setLoading(true);
+
+  //   const trackingNumbers = ref
+  //     .split('\n')
+  //     .map((t) => t.trim())
+  //     .filter(Boolean);
+
+  //   const results = [];
+
+  //   for (const tn of trackingNumbers) {
+  //     try {
+  //       const res = await fetch(
+  //         `/api/track?referenceNumber=${encodeURIComponent(tn)}`
+  //       );
+  //       const data = await res.json();
+
+  //       if (!res.ok || !data?.trackResponse) {
+  //         results.push({
+  //           trackingNumber: tn,
+  //           error: data.error || 'Tracking failed',
+  //         });
+  //         continue;
+  //       }
+
+  //       const shipment = data.trackResponse.shipment?.[0];
+  //       const pkg = shipment?.package?.[0];
+  //       const activity = pkg?.activity?.[0];
+
+  //       if (!activity) {
+  //         results.push({ trackingNumber: tn, error: 'No activity found' });
+  //         continue;
+  //       }
+
+  //       const dt = parse(
+  //         `${activity.date}${activity.time}`,
+  //         'yyyyMMddHHmmss',
+  //         new Date()
+  //       );
+  //       const nice = format(dt, 'Pp');
+
+  //       results.push({
+  //         trackingNumber: tn,
+  //         city: activity.location.address.city,
+  //         state: activity.location.address.stateProvince || '',
+  //         country: activity.location.address.country || '',
+  //         statusDescription: activity.status.description.trim(),
+  //         statusCode: activity.status.statusCode,
+  //         datetime: nice,
+  //         service: pkg?.service?.description || 'N/A',
+  //       });
+  //     } catch (e) {
+  //       results.push({ trackingNumber: tn, error: e.message });
+  //     }
+  //   }
+
+  //   setResult(results);
+  //   setLoading(false);
+  // }
   async function handleTrack() {
     setResult(null);
     setError('');
     setLoading(true);
-
+  
     const trackingNumbers = ref
       .split('\n')
       .map((t) => t.trim())
       .filter(Boolean);
-
-    const results = [];
-
-    for (const tn of trackingNumbers) {
-      try {
-        const res = await fetch(
-          `/api/track?referenceNumber=${encodeURIComponent(tn)}`
-        );
-        const data = await res.json();
-
-        if (!res.ok || !data?.trackResponse) {
-          results.push({
-            trackingNumber: tn,
-            error: data.error || 'Tracking failed',
-          });
-          continue;
-        }
-
-        const shipment = data.trackResponse.shipment?.[0];
-        const pkg = shipment?.package?.[0];
-        const activity = pkg?.activity?.[0];
-
-        if (!activity) {
-          results.push({ trackingNumber: tn, error: 'No activity found' });
-          continue;
-        }
-
-        const dt = parse(
-          `${activity.date}${activity.time}`,
-          'yyyyMMddHHmmss',
-          new Date()
-        );
-        const nice = format(dt, 'Pp');
-
-        results.push({
-          trackingNumber: tn,
-          city: activity.location.address.city,
-          state: activity.location.address.stateProvince || '',
-          country: activity.location.address.country || '',
-          statusDescription: activity.status.description.trim(),
-          statusCode: activity.status.statusCode,
-          datetime: nice,
-          service: pkg?.service?.description || 'N/A',
-        });
-      } catch (e) {
-        results.push({ trackingNumber: tn, error: e.message });
+  
+    let results = [];
+    let toRetry = [...trackingNumbers];
+    let retryCount = 0;
+    const maxRetries = 3;
+    const batchSize = 10;
+  
+    while (toRetry.length > 0 && retryCount < maxRetries) {
+      const currentBatch = toRetry.slice(0, batchSize);
+      toRetry = toRetry.slice(batchSize);
+  
+      const batchResults = await Promise.all(
+        currentBatch.map(async (tn) => {
+          try {
+            const res = await fetch(`/api/track?referenceNumber=${encodeURIComponent(tn)}`);
+            const data = await res.json();
+  
+            if (!res.ok || !data?.trackResponse) {
+              const isRateLimit =
+                data?.error?.includes('"10429"') ||
+                data?.error?.includes('Too Many Requests') ||
+                res.status === 429;
+  
+              return {
+                trackingNumber: tn,
+                error: isRateLimit ? 'RATE_LIMIT' : data.error || 'Tracking failed',
+              };
+            }
+  
+            const shipment = data.trackResponse.shipment?.[0];
+            const pkg = shipment?.package?.[0];
+            const activity = pkg?.activity?.[0];
+  
+            if (!activity) {
+              return { trackingNumber: tn, error: 'No activity found' };
+            }
+  
+            const dt = parse(
+              `${activity.date}${activity.time}`,
+              'yyyyMMddHHmmss',
+              new Date()
+            );
+            const nice = format(dt, 'Pp');
+  
+            return {
+              trackingNumber: tn,
+              city: activity.location.address.city,
+              state: activity.location.address.stateProvince || '',
+              country: activity.location.address.country || '',
+              statusDescription: activity.status.description.trim(),
+              statusCode: activity.status.statusCode,
+              datetime: nice,
+              service: pkg?.service?.description || 'N/A',
+            };
+          } catch (e) {
+            return { trackingNumber: tn, error: e.message };
+          }
+        })
+      );
+  
+      const failed = batchResults.filter((r) => r.error === 'RATE_LIMIT').map((r) => r.trackingNumber);
+      const successful = batchResults.filter((r) => r.error !== 'RATE_LIMIT');
+  
+      results.push(...successful);
+      toRetry.push(...failed);
+  
+      if (failed.length > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 2000 * (retryCount + 1)));
+        retryCount++;
       }
     }
-
+  
+    // Handle final attempts that still failed with RATE_LIMIT
+    if (toRetry.length > 0) {
+      toRetry.forEach((tn) => {
+        results.push({ trackingNumber: tn, error: 'Rate limit exceeded after multiple retries' });
+      });
+    }
+  
     setResult(results);
     setLoading(false);
   }
+  
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
